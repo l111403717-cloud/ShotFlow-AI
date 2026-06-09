@@ -347,6 +347,11 @@ class BatchProcessor:
         self._current_page = None
         self._is_shutting_down = False  # 防止关闭时线程回调闪退
 
+        # MiMo 历史记录
+        self._mimo_history_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mimo_chat_history.json")
+        self._mimo_messages = []  # 当前会话的消息列表
+        self._mimo_session_id = time.strftime("%Y%m%d_%H%M%S")  # 当前会话ID
+
         self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
 
         self._build_sidebar()
@@ -2913,6 +2918,27 @@ class BatchProcessor:
         self.agent_chat_history.see("end")
         self.agent_chat_history.configure(state="disabled")
 
+    def _agent_get_logs(self, lines=50):
+        """收集最近的错误日志供智能体分析"""
+        log_parts = []
+        # 读取 crash.log 最后 N 行
+        try:
+            if os.path.exists(LOG_PATH):
+                with open(LOG_PATH, "r", encoding="utf-8", errors="ignore") as f:
+                    crash_lines = f.readlines()[-lines:]
+                    if crash_lines:
+                        log_parts.append("=== crash.log ===\n" + "".join(crash_lines))
+        except Exception:
+            pass
+        # 读取 global_log 最后 N 行（LogBox 本身是 CTkTextbox）
+        try:
+            content = self.global_log.get(f"end-{lines}l", "end").strip()
+            if content:
+                log_parts.append(f"=== 应用日志 (最近{lines}行) ===\n" + content)
+        except Exception:
+            pass
+        return "\n\n".join(log_parts) if log_parts else "暂无日志记录"
+
     def _agent_send_command(self):
         """处理智能体命令"""
         cmd = self.agent_input.get().strip()
@@ -3062,7 +3088,7 @@ class BatchProcessor:
         # 使用配置中的模型名称
         model = self.config.get("api_model", "mimo-v2.5-pro").strip()
 
-        self._agent_log(f"🤖: 正在调用 {model} 分析命令...")
+        self.safe_after(lambda m=f"🤖: 正在调用 {model} 分析命令...": self._agent_log(m))
 
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -3081,6 +3107,7 @@ class BatchProcessor:
 5. modify_single - 修改单条 (params: {{"idx": 0, "text": "新提示词"}})
 6. add_images - 添加图片
 7. chat_reply - 普通回复 (params: {{"reply": "回复内容"}})
+8. read_logs - 当用户问"哪里出错了"、"看看日志"、"帮我诊断"或遇到问题时，读取应用日志并诊断问题 (params: {{"reply": "诊断结果和解决建议"}})
 
 只输出JSON，不要有其他内容。"""
 
@@ -3091,7 +3118,7 @@ class BatchProcessor:
                 {"role": "user", "content": cmd}
             ],
             "temperature": 0.3,
-            "max_tokens": 2000,
+            "max_tokens": 1000000,
         }
         try:
             resp = requests.post(
@@ -3109,11 +3136,14 @@ class BatchProcessor:
                 self.safe_after( lambda: self._agent_process_ai_command(ai_reply))
             else:
                 error_msg = resp.text[:200] if resp.text else f"HTTP {resp.status_code}"
-                self.safe_after( lambda: self._agent_log(f"🤖: ❌ API错误: {error_msg}"))
+                logs = self._agent_get_logs(30)
+                self.safe_after( lambda m=f"🤖: ❌ API错误: {error_msg}\n📋 最近日志:\n{logs[:800]}": self._agent_log(m))
         except requests.exceptions.Timeout:
-            self.safe_after( lambda: self._agent_log("🤖: ❌ 请求超时（120秒），消息可能过长"))
+            logs = self._agent_get_logs(30)
+            self.safe_after( lambda m=f"🤖: ❌ 请求超时（120秒），消息可能过长\n📋 最近日志:\n{logs[:800]}": self._agent_log(m))
         except Exception as e:
-            self.safe_after( lambda: self._agent_log(f"🤖: ❌ 错误: {e}"))
+            logs = self._agent_get_logs(30)
+            self.safe_after( lambda m=f"🤖: ❌ 错误: {e}\n📋 最近日志:\n{logs[:800]}": self._agent_log(m))
 
     def _agent_process_ai_command(self, ai_reply):
         """处理AI返回的命令"""
@@ -3149,12 +3179,17 @@ class BatchProcessor:
                     self._i2v_batch_add_images()
                 elif action == "chat_reply":
                     self._agent_log(f"🤖: {params.get('reply', '')}")
+                elif action == "read_logs":
+                    self._agent_log(f"🤖: {params.get('reply', '')}")
+                    logs = self._agent_get_logs()
+                    self._agent_log(f"📋 最近日志:\n{logs[:1000]}")
                 else:
                     self._agent_log(f"🤖: {ai_reply}")
             else:
                 self._agent_log(f"🤖: {ai_reply}")
         except Exception as e:
-            self._agent_log(f"🤖: {ai_reply}")
+            self._agent_log(f"🤖: ❌ 解析AI回复失败: {e}")
+            self._agent_log(f"🤖: 原始回复: {ai_reply[:200]}")
 
     # ========== 批量图生视频 (I2V Batch) 核心函数 ==========
 
@@ -4956,7 +4991,7 @@ class BatchProcessor:
             }
             url = f"{base_url}/chat/completions"
             payload = {
-                "model": model, "temperature": 0.8, "max_tokens": 4096,
+                "model": model, "temperature": 0.8, "max_tokens": 1000000,
                 "messages": [{"role": "system", "content": SYSTEM_PROMPT},
                               {"role": "user", "content": idea}]
             }
