@@ -1,228 +1,88 @@
-<div align="center">
-  <a href="https://cua.ai" target="_blank" rel="noopener noreferrer">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" alt="Cua logo" width="150" srcset="img/logo_white.svg">
-      <source media="(prefers-color-scheme: light)" alt="Cua logo" width="150" srcset="img/logo_black.svg">
-      <img alt="Cua logo" width="150" src="img/logo_black.svg">
-    </picture>
-  </a>
+# AI 镜头脚本生成器
 
-  <p align="center">Build, benchmark, and deploy agents that use computers</p>
+> 一个基于 CustomTkinter 的 AI 内容创作工具，支持剧本生成、图片处理、视频生成、配音等功能。
 
-  <p align="center">
-    <a href="https://cua.ai" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/cua.ai-0ea5e9" alt="cua.ai"></a>
-    <a href="https://discord.gg/mVnXXpdE85" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Discord-Join%20Server-10b981?logo=discord&logoColor=white" alt="Discord"></a>
-    <a href="https://x.com/trycua" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/twitter/follow/trycua?style=social" alt="Twitter"></a>
-    <a href="https://cua.ai/docs" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Docs-0ea5e9.svg" alt="Documentation"></a>
-    <br>
-<a href="https://trendshift.io/repositories/13685" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13685" alt="trycua%2Fcua | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-  </p>
-
-</div>
-
-## Choose Your Path
-
-<div align="center">
-  <table>
-    <tr>
-      <td colspan="3" align="center">
-        <a href="#cua-driver---background-computer-use-on-macos-and-windows-with-linux-pre-release">
-          <img src="img/card-cua-driver.png" alt="Cua Driver — The background computer-use agent" width="888">
-        </a>
-      </td>
-    </tr>
-    <tr>
-      <td align="center">
-        <a href="#cua---agentic-ui-automation--code-execution">
-          <img src="img/card-cua-sandbox.png" alt="Cua &amp; Cua Sandbox" width="280">
-        </a>
-      </td>
-      <td align="center">
-        <a href="#cua-bench---benchmarks--rl-environments">
-          <img src="img/card-cua-bench.png" alt="Cua Bench" width="280">
-        </a>
-      </td>
-      <td align="center">
-        <a href="#lume---macos-virtualization">
-          <img src="img/card-cua-lume.png" alt="Lume" width="280">
-        </a>
-      </td>
-    </tr>
-  </table>
-</div>
+**⚠️ 半成品 | 在校大学生作品 | 欢迎大佬指点**
 
 ---
 
-## Cua Driver - Background computer-use on macOS and Windows, with Linux pre-release
+## 功能模块
 
-Drive native desktop apps **in the background** — agents click, type, and verify without stealing the cursor or focus. Use the same CLI and MCP server on macOS and Windows from Claude Code, Cursor, Codex, OpenClaw, and custom clients. Linux support is available as a pre-release backend while platform testing is still in progress.
+| 模块 | 功能 | 状态 |
+|------|------|------|
+| 剧本生成 | 输入故事创意，自动生成分镜脚本 | ✅ 基本完成 |
+| 视觉引擎 | 图片批处理、百炼 AI 生图/生视频 | ✅ 基本完成 |
+| Vidu 视频 | Vidu API 视频生成 | ⚠️ API 过期，需更新 |
+| 智能配音 | 阿里云 TTS、GPT-SoVITS、小米 MiMo | ✅ 基本完成 |
+| 全局设置 | API 配置、供应商管理 | ✅ 基本完成 |
+| 一键总装 | FFmpeg 音视频合成 | ✅ 基本完成 |
 
-**macOS / Linux pre-release**
+## 技术栈
 
-```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/trycua/cua/main/libs/cua-driver/scripts/install.sh)"
-```
+- Python 3.12
+- CustomTkinter (GUI)
+- PIL/Pillow (图片处理)
+- Requests (API 调用)
+- FFmpeg (音视频处理)
 
-**Windows (PowerShell)**
-
-```powershell
-irm https://raw.githubusercontent.com/trycua/cua/main/libs/cua-driver/scripts/install.ps1 | iex
-```
-
-Full tool reference, architecture notes, and the optional agent skill pack live here: [`libs/cua-driver/README.md`](libs/cua-driver/README.md).
-
----
-
-## Cua - Agent-Ready Sandboxes for Any OS
-
-Build agents that see screens, click buttons, and complete tasks autonomously. One API for any VM or container image — cloud or local.
-
-```sh
-pip install cua
-```
-
-<!-- <img src="img/cua-architecture.png" alt="Cua Architecture" width="100%"> -->
-
-```python
-# Requires Python 3.11 or later
-from cua import Sandbox, Image
-
-# Same API regardless of OS or runtime
-async with Sandbox.ephemeral(Image.linux()) as sb:   # or .macos() .windows() .android()
-    result = await sb.shell.run("echo hello")
-    screenshot = await sb.screenshot()
-    await sb.mouse.click(100, 200)
-    await sb.keyboard.type("Hello from Cua!")
-    await sb.mobile.gesture((100, 500), (100, 200))  # multi-touch gestures
-```
-
-|                    | Linux container | Linux VM | macOS | Windows | Android | BYOI (.qcow2, .iso) |
-| ------------------ | --------------- | -------- | ----- | ------- | ------- | ------------------- |
-| **Cloud (cua.ai)** | ✅              | ✅       | ✅    | ✅      | ✅      | 🔜 soon             |
-| **Local (QEMU)**   | ✅              | ✅       | ✅    | ✅      | ✅      | ✅                  |
-
-**[Get Started](https://cua.ai/docs/cua/guide/get-started/set-up-sandbox)** | **[Examples](https://cua.ai/docs/cua/examples)** | **[API Reference](https://cua.ai/docs/cua/reference/agent-sdk)**
-
----
-
-## CuaBot - Co-op computer-use for any agent
-
-<div align="center">
-  <img src="img/cuabot-screenshot.png" alt="cuabot screenshot" width="720">
-</div>
-
-`cuabot` gives any coding agent a seamless sandbox for computer-use. Individual windows appear natively on your desktop with H.265, shared clipboard, and audio.
+## 快速开始
 
 ```bash
-npx cuabot                 # Setup onboarding
+# 1. 安装依赖
+pip install customtkinter pillow requests
+
+# 2. 运行程序
+python batch_processor.py
+
+# 或者双击桌面快捷方式（需要先配置 bat 文件路径）
 ```
 
-```bash
-# Run any agent in a sandbox
-cuabot claude              # Claude Code
-cuabot openclaw            # OpenClaw in the sandbox
+## 项目结构
 
-# Run any GUI workflow in a sandbox
-cuabot chromium
-cuabot --screenshot
-cuabot --type "hello"
-cuabot --click <x> <y> [button]
+```
+├── batch_processor.py      # 入口文件（兼容旧版）
+├── studio/                 # 核心代码（模块化）
+│   ├── app.py             # 主应用类
+│   ├── config.py          # 配置管理
+│   ├── constants.py       # 常量定义
+│   ├── ui.py              # 公共组件
+│   └── pages/             # 各功能页面
+│       ├── script.py      # 剧本生成
+│       ├── visuals.py     # 视觉引擎
+│       ├── vidu.py        # Vidu 视频
+│       ├── voice.py       # 智能配音
+│       ├── api_page.py    # API 设置
+│       └── assembly.py    # 一键总装
+├── config.json            # 用户配置（自动生成）
+└── crash.log              # 错误日志
 ```
 
-Built-in support for `agent-browser` and `agent-device` (iOS, Android) out of the box.
+## 当前问题（求指导）
 
-<div align="center">
+1. **代码架构**：目前是单文件拆分，不确定这样的模块化方式是否合理
+2. **API 调用**：对 Anthropic/OpenAI 兼容 API 的处理不够完善
+3. **错误处理**：异常处理比较粗糙，需要优化
+4. **UI 设计**：CustomTkinter 的布局和样式还需要改进
+5. **功能完善**：部分功能只是基本实现，还有很多细节需要打磨
 
-**[Get Started](https://cua.ai/docs/cuabot/guide/getting-started/introduction)** | **[Installation](https://cua.ai/docs/cuabot/guide/getting-started/installation)** | First spotted at [ClawCon](https://www.claw-con.com/)
+## 欢迎贡献
 
-<img height="64" alt="cuaXclawdbot_nbg" src="https://github.com/user-attachments/assets/8b92237d-6e9b-4b3a-ae9a-b3560622ec1d" />
+这是一个学习项目，代码还有很多不足之处。如果你有更好的建议或想贡献代码，欢迎：
 
-</div>
+- 提交 Issue
+- 提交 Pull Request
+- 分享你的想法
+
+## 环境要求
+
+- Windows 10/11
+- Python 3.10+
+- FFmpeg（一键总装功能需要）
+
+## 许可证
+
+MIT License
 
 ---
 
-## Cua-Bench - Benchmarks & RL Environments
-
-Evaluate computer-use agents on OSWorld, ScreenSpot, Windows Arena, and custom tasks. Export trajectories for training.
-
-<!-- <img src="img/cua-bench-architecture.png" alt="Cua-Bench Architecture" width="100%"> -->
-
-```bash
-# Install and create base image
-cd cua-bench
-uv tool install -e . && cb image create linux-docker
-
-# Run benchmark with agent
-cb run dataset datasets/cua-bench-basic --agent cua-agent --max-parallel 4
-```
-
-**[Get Started](https://cua.ai/docs/cuabench/guide/getting-started/first-steps)** | **[Partner With Us](https://cuabench.ai/)** | **[Registry](https://cuabench.ai/registry)** | **[CLI Reference](https://cua.ai/docs/cuabench/reference/cli-reference)**
-
----
-
-## Lume - macOS Virtualization
-
-Create and manage macOS/Linux VMs with near-native performance on Apple Silicon using Apple's Virtualization.Framework.
-
-<!-- <img src="img/lume-architecture.png" alt="Lume Architecture" width="100%"> -->
-
-```bash
-# Install Lume
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/trycua/cua/main/libs/lume/scripts/install.sh)"
-
-# Pull & start a macOS VM
-lume run macos-sequoia-vanilla:latest
-```
-
-**[Get Started](https://cua.ai/docs/lume)** | **[FAQ](https://cua.ai/docs/lume/guide/getting-started/faq)** | **[CLI Reference](https://cua.ai/docs/lume/reference/cli-reference)**
-
----
-
-## Packages
-
-| Package                                                                     | Description                                                |
-| --------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| [cuabot](https://docs.trycua.com/cuabot/guide/getting-started/introduction) | Multi-agent computer-use sandbox CLI                       |
-| [cua-agent](https://cua.ai/docs/cua/reference/agent-sdk)                    | AI agent framework for computer-use tasks                  |
-| [cua-sandbox](https://cua.ai/docs/cua/reference/sandbox-sdk)                | SDK for creating and controlling sandboxes                 |
-| [cua-computer-server](https://cua.ai/docs/cua/reference/sandbox-sdk)        | Driver for UI interactions and code execution in sandboxes |
-| [cua-bench](https://cua.ai/docs/cuabench)                                   | Benchmarks and RL environments for computer-use            |
-| [lume](https://cua.ai/docs/lume)                                            | macOS/Linux VM management on Apple Silicon                 |
-| [lumier](https://cua.ai/docs/lume/guide/advanced/lumier)                    | Docker-compatible interface for Lume VMs                   |
-
-## Resources
-
-- [Documentation](https://cua.ai/docs) — Guides, examples, and API reference
-- [Blog](https://www.cua.ai/blog) — Tutorials, updates, and research
-- [Discord](https://discord.com/invite/mVnXXpdE85) — Community support and discussions
-- [GitHub Issues](https://github.com/trycua/cua/issues) — Bug reports and feature requests
-
-## Contributing
-
-We welcome contributions! See our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-## License
-
-MIT License — see [LICENSE](LICENSE.md) for details.
-
-Third-party components have their own licenses:
-
-- [Kasm](libs/kasm/LICENSE) (MIT)
-- [OmniParser](https://github.com/microsoft/OmniParser/blob/master/LICENSE) (CC-BY-4.0)
-- Optional `cua-agent[omni]` includes ultralytics (AGPL-3.0)
-
-## Trademarks
-
-Apple, macOS, Ubuntu, Canonical, and Microsoft are trademarks of their respective owners. This project is not affiliated with or endorsed by these companies.
-
----
-
-<div align="center">
-
-[![Stargazers over time](https://starchart.cc/trycua/cua.svg?variant=adaptive)](https://starchart.cc/trycua/cua)
-
-Thank you to all our [GitHub Sponsors](https://github.com/sponsors/trycua)!
-
-<img width="300" alt="coderabbit-cli" src="https://github.com/user-attachments/assets/23a98e38-7897-4043-8ef7-eb990520dccc" />
-
-</div>
+**最后更新**：2026-06-25
